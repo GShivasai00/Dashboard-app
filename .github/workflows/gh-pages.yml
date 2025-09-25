@@ -16,17 +16,31 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
+      - name: Diagnostic: print environment
         run: |
-          # use legacy-peer-deps to avoid the peer conflict encountered locally
+          node --version || true
+          npm --version || true
+          echo "Working dir: $(pwd)"
+          echo "Files in repo root:"
+          ls -la
+
+      - name: Install dependencies (legacy-peer-deps)
+        run: |
           npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
-      - name: Build
-        run: npm run build
+      - name: Diagnostic: list node_modules
+        run: |
+          if [ -d node_modules ]; then ls -la node_modules || true; else echo "node_modules not present"; fi
+
+      - name: Build (increase memory limit)
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: |
+          npm run build
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: dist      # The folder the action should deploy.
+          branch: gh-pages
+          folder: dist
           token: ${{ secrets.GITHUB_TOKEN }}
