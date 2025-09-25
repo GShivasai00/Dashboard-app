@@ -24,23 +24,25 @@ jobs:
           echo "Files in repo root:"
           ls -la
 
-      - name: Install dependencies (legacy-peer-deps)
-        run: |
-          npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-      - name: Diagnostic: list node_modules
-        run: |
-          if [ -d node_modules ]; then ls -la node_modules || true; else echo "node_modules not present"; fi
+      - name: Install dependencies (legacy-peer-deps)
+        run: npm ci --legacy-peer-deps
 
       - name: Build (increase memory limit)
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: |
-          npm run build
+        run: npm run build
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4.4.0
+      - name: Deploy to GitHub Pages (peaceiris)
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          branch: gh-pages
-          folder: dist
-          token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
